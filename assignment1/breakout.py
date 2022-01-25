@@ -22,7 +22,7 @@ block_blue = (70, 170, 230)
 colomns = 6
 rows = 6
 
-
+dkffafa
 #rectangle block class
 class rectangle():
     def __init__(self):
