@@ -71,6 +71,13 @@ def intersect_rectangle_circle(rec_pos, sx, sy,
         return impulse
     return None
 
+def draw_vec_from_ball(vec, col):
+            """ Draw a vector from the mouse controlled circle. """
+            pygame.draw.line(screen, col,
+                             (ball.position_ball.x, ball.position_ball.y),
+                             (ball.position_ball.x + vec.x * 20,
+                              ball.position_ball.y + vec.y * 20), 3)
+
 #rectangle block class
 class rectangle():
     def __init__(self):
@@ -103,7 +110,7 @@ class rectangle():
                 block_row.append(block_individual)
             #append the row to the full list of blocks
             self.blocks.append(block_row)
-            
+
     def draw_rectangle(self):
         for row in self.blocks:
             for block in row:
@@ -155,10 +162,50 @@ class circle():
 
     def move(self):
     
+        collision_tresh = 5
+        #Start of with the assumption that the wall is destroyed.
+        rectangle_destroyed = 1
+        row_count = 0
+        for row in rectangle.blocks:
+            item_count = 0
+            for item in row:
+                #check for collision
+                if self.rect.colliderect(item[0]):
+                    #check if collision from above
+                    if abs(self.rect.bottom - item[0].top) < collision_tresh and self.speed.y > 0:
+                        self.speed.y *= -1 
+                    #check if collision from below
+                    if abs(self.rect.top - item[0].bottom) < collision_tresh and self.speed.y < 0:
+                        self.speed.y *= -1 
+                    #check if collision from left
+                    if abs(self.rect.right - item[0].left) < collision_tresh and self.speed.x > 0:
+                        self.speed.x *= -1 
+                    #check if collision from right
+                    if abs(self.rect.left - item[0].right) < collision_tresh and self.speed.x < 0:
+                        self.speed.x *= -1 
+
+                    #reducing the strength if the ball hits
+                    if rectangle.blocks[row_count][item_count][1] > 1:
+                        rectangle.blocks[row_count][item_count][1] -= 1
+                    else:
+                        rectangle.blocks[row_count][item_count][0] = (0, 0, 0, 0)
+                   
+                   
+                #check if block still exists
+                if rectangle.blocks[row_count][item_count][0] != (0, 0, 0, 0):
+                    rectangle_destroyed = 0
+
+                item_count += 1
+
+            row_count += 1
+
+        #Checking if wall is destroyed
+        if rectangle_destroyed ==1:
+            self.game_over = 1 
+
         #Checking for collision with walls
         if self.rect.left < 0 or self.rect.right > SCREEN_X:
             self.speed.x *= -1
-
 
         #checking for collision with top and bottom of the screen
         if self.rect.top < 0:
@@ -167,14 +214,15 @@ class circle():
             self.game_over = -1
 
 
-        impulse = intersect_rectangle_circle((player_paddle.rect),
-                                             player_paddle.width,
-                                             player_paddle.height,
-                                             self.position_ball,
+        impulse = intersect_rectangle_circle(paddlebox.rect,
+                                             paddlebox.width,
+                                             paddlebox.height,
+                                             self.rect,
                                              self.radius,
-                                             (self.speed.x, self.speed.y))
+                                             self.speed)
         if impulse:
-            draw_vec_from_ball(impulse, (0, 255, 255))
+            #draw_vec_from_ball(impulse, (0, 255, 255))
+            impulse = self.speed
             print("Hit")
         
         self.rect.x += self.speed.x
@@ -192,10 +240,10 @@ rectangle = rectangle()
 rectangle.create_rectangle()
 
 #create paddle
-player_paddle = paddle()
+paddlebox = paddle()
 
 #create ball
-ball = circle(player_paddle.position.x + (player_paddle.width // 2), player_paddle.position.y - player_paddle.height)
+ball = circle(paddlebox.position.x + (paddlebox.width // 2), paddlebox.position.y - paddlebox.height)
 
 pygame.init()            
 while True:
@@ -207,8 +255,8 @@ while True:
     rectangle.draw_rectangle()
 
     #draw paddle
-    player_paddle.draw()
-    player_paddle.move()
+    paddlebox.draw()
+    paddlebox.move()
 
     #draw ball 
     ball.draw()
