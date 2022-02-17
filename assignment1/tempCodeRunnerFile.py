@@ -1,1 +1,1 @@
-super().__init__()
+   return self.game_over
